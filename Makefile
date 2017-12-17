@@ -2,7 +2,9 @@ CC ?= gcc
 CFLAGS_common ?= -Wall -Os -std=gnu99
 SRC ?= ./src
 OUT ?= ./build
+TEST ?= ./test
 OPENCL_LIB ?= /usr/local/cuda-9.0/lib64/
+SAMPLES ?= 30
 
 $(OUT)/constants.o: $(SRC)/constants.c $(SRC)/constants.h
 	$(CC) $(CFLAGS_common) -c -o $@ $<
@@ -46,5 +48,31 @@ test: pow_c pow_sse pow_avx pow_cl
 	./pow_avx
 	./pow_cl
 
+pow_test_c: $(OUT)/trinary.o $(TEST)/sampling.c $(OUT)/constants.o $(OUT)/curl.o $(OUT)/pow_c.o
+	$(CC) $(CFLAGS_common) -DC -o $@ $^ -lpthread
+
+pow_test_sse: $(OUT)/trinary.o $(TEST)/sampling.c $(OUT)/constants.o $(OUT)/curl.o $(OUT)/pow_sse.o
+	$(CC) $(CFLAGS_common) -msse2 -DSSE -g -o $@ $^ -lpthread
+
+pow_test_cl: $(OUT)/trinary.o $(OUT)/clcontext.o $(TEST)/sampling.c $(OUT)/constants.o $(OUT)/curl.o $(OUT)/pow_cl.o
+	$(CC) $(CFLAGS_common) -DCL -g -L/usr/local/lib/ -L$(OPENCL_LIB) -o $@ $^ -lOpenCL
+
+pow_c.txt: pow_test_c
+	for i in $$(seq 1 $(SAMPLES)); do \
+		./pow_test_c; \
+	done
+
+pow_sse.txt: pow_test_sse
+	for i in $$(seq 1 $(SAMPLES)); do \
+		./$<; \
+	done
+
+pow_cl.txt: pow_test_cl
+	for i in $$(seq 1 $(SAMPLES)); do \
+		./$<; \
+	done
+
+sample: pow_c.txt pow_sse.txt pow_cl.txt
+
 clean:
-	rm $(OUT)/*.o pow_c pow_sse pow_avx
+	rm $(OUT)/*.o pow_c pow_sse pow_avx pow_test_* *.txt
