@@ -74,5 +74,11 @@ pow_cl.txt: pow_test_cl
 
 sample: pow_c.txt pow_sse.txt pow_cl.txt
 
+output.txt: sample
+	python3 $(TEST)/calculate.py
+
+plot: output.txt
+	gnuplot $(TEST)/runtime.gp
+
 clean:
 	rm $(OUT)/*.o pow_c pow_sse pow_avx pow_test_* *.txt
