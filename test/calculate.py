@@ -15,7 +15,7 @@ for name in file_name:
             count += 1
 
     avg = acc / count
-    fout.write(str(avg) + " ")
+    fout.write(str(round(avg, 3)) + " ")
 
 fout.write("\n")
 fout.close()
