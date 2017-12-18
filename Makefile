@@ -80,5 +80,28 @@ output.txt: sample
 plot: output.txt
 	gnuplot $(TEST)/runtime.gp
 
+pow_c_thread: pow_test_c
+	touch pow_c.txt
+	for i in 1 2 4 8 16 32 64 128 256 512; do \
+		for j in $$(seq 1 $(SAMPLES)); do \
+			export CCURL_NUM_THREADS=$$i; \
+			./pow_test_c; \
+		done; \
+	done
+
+pow_sse_thread: pow_test_sse
+	touch pow_sse.txt
+	for i in 1 2 4 8 16 32 64 128 256 512; do \
+		for j in $$(seq 1 $(SAMPLES)); do \
+			export CCURL_NUM_THREADS=$$i; \
+			./pow_test_sse; \
+		done; \
+	done
+
+thread_plot: pow_c_thread pow_sse_thread
+	touch output.txt
+	python3 $(TEST)/threads_calculate.py
+	gnuplot $(TEST)/thread_runtime.gp
+
 clean:
 	rm $(OUT)/*.o pow_c pow_sse pow_avx pow_test_* *.txt

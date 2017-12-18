@@ -271,7 +271,16 @@ Trytes *PowSSE(Trytes *trytes, int mwm)
         c_state[i] = c->state->data[i];
     }
     
+    const char *env_num_cpu = getenv("CCURL_NUM_THREADS");
+    
     int num_cpu = get_nprocs_conf() - 1;
+    if (env_num_cpu) {
+        num_cpu = atoi(env_num_cpu);
+        printf("Thread num: %d\n", num_cpu);
+    } else {
+        printf("Thread num (default): %d\n", num_cpu);
+    }
+    
     pthread_t *threads = (pthread_t *) malloc(sizeof(pthread_t) * num_cpu);
     Pwork_struct *pitem = (Pwork_struct *) malloc(sizeof(Pwork_struct) * num_cpu);
     /* Prepare nonce to each thread */
