@@ -100,8 +100,15 @@ char *pwork(char *state, int mwm)
     int64_t mid_low[STATE_LENGTH] = {0}, mid_high[STATE_LENGTH] = {0};
     init_state(state, mid_low, mid_high, HASH_LENGTH - NONCE_LENGTH);
     
+    const char *loop_count = getenv("CCURL_LOOP_COUNT");
 
-    write_cl_buffer(titan, mid_low, mid_high, mwm, 32);
+    if (loop_count) {
+        printf("OpenCL runs loop_count: %d\n", atoi(loop_count));
+        write_cl_buffer(titan, mid_low, mid_high, mwm, atoi(loop_count));
+    } else {
+        printf("OpenCL runs loop_count: %d\n", 32);
+        write_cl_buffer(titan, mid_low, mid_high, mwm, 32);
+    }
 
     if (CL_SUCCESS == clEnqueueNDRangeKernel(titan->cmdq, titan->kernel[0], 1, &global_offset, &global_work_size, &local_work_size, 0, NULL, &ev)) {
         clWaitForEvents(1, &ev);
