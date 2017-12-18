@@ -18,8 +18,8 @@ for name in file_name:
 
     for i in range(THREADS):
         acc = 0.0
-        line = fin.readline()
         for j in range(SAMPLES):
+            line = fin.readline()
             _, _, time, _ = line.split()
             acc += float(time)
 
