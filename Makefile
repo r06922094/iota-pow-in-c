@@ -83,8 +83,8 @@ plot: output.txt
 pow_c_thread: pow_test_c
 	touch pow_c.txt
 	for i in 1 2 4 8 16 32 64 128 256 512; do \
+		export CCURL_NUM_THREADS=$$i; \
 		for j in $$(seq 1 $(SAMPLES)); do \
-			export CCURL_NUM_THREADS=$$i; \
 			./pow_test_c; \
 		done; \
 	done
@@ -92,8 +92,8 @@ pow_c_thread: pow_test_c
 pow_sse_thread: pow_test_sse
 	touch pow_sse.txt
 	for i in 1 2 4 8 16 32 64 128 256 512; do \
+		export CCURL_NUM_THREADS=$$i; \
 		for j in $$(seq 1 $(SAMPLES)); do \
-			export CCURL_NUM_THREADS=$$i; \
 			./pow_test_sse; \
 		done; \
 	done
@@ -102,6 +102,20 @@ thread_plot: pow_c_thread pow_sse_thread
 	touch output.txt
 	python3 $(TEST)/threads_calculate.py
 	gnuplot $(TEST)/thread_runtime.gp
+
+pow_cl_loop: pow_test_cl
+	touch pow_cl.txt
+	for i in 1 2 4 8 16 32 64 128 256 512; do \
+		export CCURL_LOOP_COUNT=$$i; \
+		for j in $$(seq 1 $(SAMPLES)); do \
+			./pow_test_cl; \
+		done; \
+	done
+
+loop_plot: pow_cl_loop
+	touch output.txt
+	python3 $(TEST)/loop_calculate.py
+	gnuplot $(TEST)/loop_runtime.gp
 
 clean:
 	rm $(OUT)/*.o pow_c pow_sse pow_avx pow_test_* *.txt
