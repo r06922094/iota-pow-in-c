@@ -5,6 +5,22 @@
 #include "pow_c.h"
 #include "curl.h"
 #include "constants.h"
+#include <time.h>
+
+static double diff_in_second(struct timespec t1, struct timespec t2)
+{
+    struct timespec diff;
+    if (t2.tv_nsec-t1.tv_nsec < 0) {
+        diff.tv_sec  = t2.tv_sec - t1.tv_sec - 1;
+        diff.tv_nsec = t2.tv_nsec - t1.tv_nsec + 1000000000;
+    } else {
+        diff.tv_sec  = t2.tv_sec - t1.tv_sec;
+        diff.tv_nsec = t2.tv_nsec - t1.tv_nsec;
+    }
+    return (diff.tv_sec + diff.tv_nsec / 1000000000.0);
+}
+
+
 
 #define HBITS 0xFFFFFFFFFFFFFFFFL
 #define LBITS 0x0000000000000000L
@@ -112,12 +128,21 @@ long long int loop_cpu(unsigned long *lmid, unsigned long *hmid, int m, char *no
     int n = 0;
     long long int i = 0;
     unsigned long lcpy[STATE_LENGTH * 2], hcpy[STATE_LENGTH * 2];
-    
+    struct timespec start, end;
+    static double cpu_time = 0.0;
+    static int count = 0;
+
     for (i = 0; !incr(lmid, hmid) && !stopC; i++) {
+        clock_gettime(CLOCK_REALTIME, &start);
         memcpy(lcpy, lmid, STATE_LENGTH * sizeof(long));
         memcpy(hcpy, hmid, STATE_LENGTH * sizeof(long));
         transform64(lcpy, hcpy);
+        clock_gettime(CLOCK_REALTIME, &end);
+        cpu_time += diff_in_second(start, end);
+        count++;
         if ((n = check(lcpy + STATE_LENGTH, hcpy + STATE_LENGTH, m)) >= 0) {
+            printf("Average transform time: %f\n", cpu_time / count);
+            printf("loop count: %d\n", count);
             seri(lmid, hmid, n, nonce);
             return i * 64;
         }

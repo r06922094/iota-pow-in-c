@@ -6,6 +6,22 @@
 #include "curl.h"
 #include "constants.h"
 
+#include <time.h>
+
+static double diff_in_second(struct timespec t1, struct timespec t2)
+{
+    struct timespec diff;
+    if (t2.tv_nsec-t1.tv_nsec < 0) {
+        diff.tv_sec  = t2.tv_sec - t1.tv_sec - 1;
+        diff.tv_nsec = t2.tv_nsec - t1.tv_nsec + 1000000000;
+    } else {
+        diff.tv_sec  = t2.tv_sec - t1.tv_sec;
+        diff.tv_nsec = t2.tv_nsec - t1.tv_nsec;
+    }
+    return (diff.tv_sec + diff.tv_nsec / 1000000000.0);
+}
+
+
 #ifdef _MSC_VER
 #include <intrin.h>
 #else
@@ -147,16 +163,25 @@ long long int loop128(__m128i *lmid, __m128i *hmid, int m, char *nonce)
 	int n = 0;
 	long long int i = 0;
 	__m128i lcpy[STATE_LENGTH * 2], hcpy[STATE_LENGTH * 2];
-	
+    struct timespec start, end;
+    static double cpu_time = 0.0;
+    static int count = 0;
+
     for (i = 0; !incr128(lmid, hmid) && !stopSSE; i++) {
+        clock_gettime(CLOCK_REALTIME, &start);
         for (int j = 0; j < STATE_LENGTH; j++) {
             lcpy[j] = lmid[j];
             hcpy[j] = hmid[j];
         }
 
         transform128(lcpy, hcpy);
+        clock_gettime(CLOCK_REALTIME, &end);
+        cpu_time += diff_in_second(start, end);
+        count++;
 
         if ((n = check128(lcpy + STATE_LENGTH, hcpy + STATE_LENGTH, m)) >= 0) {
+            printf("Average transform time: %f\n", cpu_time / count);
+            printf("loop count: %d\n", count);
             seri128(lmid, hmid, n, nonce);
             return i * 128;
         }
